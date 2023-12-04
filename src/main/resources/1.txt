@@ -1,0 +1,21 @@
+{
+  "answer": "暴力",
+  "content": "内容",
+  "judgeCase": [
+    {
+      "input": "1 2",
+      "output": "3 4"
+    }
+  ],
+  "judgeConfig": [
+    {
+      "memoryLimit": 1000,
+      "stackLimit": 1000,
+      "timeLimit": 1000
+    }
+  ],
+  "tags": [
+      "栈","简单"
+],
+  "title": "a+b"
+}

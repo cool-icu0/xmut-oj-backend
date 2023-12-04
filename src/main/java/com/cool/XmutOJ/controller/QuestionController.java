@@ -9,10 +9,8 @@ import com.cool.XmutOJ.common.ResultUtils;
 import com.cool.XmutOJ.constant.UserConstant;
 import com.cool.XmutOJ.exception.BusinessException;
 import com.cool.XmutOJ.exception.ThrowUtils;
-import com.cool.XmutOJ.model.dto.question.QuestionAddRequest;
-import com.cool.XmutOJ.model.dto.question.QuestionEditRequest;
-import com.cool.XmutOJ.model.dto.question.QuestionQueryRequest;
-import com.cool.XmutOJ.model.dto.question.QuestionUpdateRequest;
+import com.cool.XmutOJ.model.dto.question.*;
+import com.cool.XmutOJ.model.dto.user.UserQueryRequest;
 import com.cool.XmutOJ.model.entity.Question;
 import com.cool.XmutOJ.model.entity.User;
 import com.cool.XmutOJ.model.vo.QuestionVO;
@@ -62,6 +60,14 @@ public class QuestionController {
         List<String> tags = questionAddRequest.getTags();
         if (tags != null) {
             question.setTags(GSON.toJson(tags));
+        }
+        List<JudgeCase> judgeCase = questionAddRequest.getJudgeCase();
+        if (judgeCase!=null){
+            question.setJudgeCase(GSON.toJson(judgeCase));
+        }
+        List<JudgeConfig> judgeConfig = questionAddRequest.getJudgeConfig();
+        if (judgeConfig!=null){
+            question.setJudgeConfig(GSON.toJson(judgeConfig));
         }
         questionService.validQuestion(question, true);
         User loginUser = userService.getLoginUser(request);
@@ -117,6 +123,14 @@ public class QuestionController {
         if (tags != null) {
             question.setTags(GSON.toJson(tags));
         }
+        List<JudgeCase> judgeCase = questionUpdateRequest.getJudgeCase();
+        if (judgeCase!=null){
+            question.setJudgeCase(GSON.toJson(judgeCase));
+        }
+        List<JudgeConfig> judgeConfig = questionUpdateRequest.getJudgeConfig();
+        if (judgeConfig!=null){
+            question.setJudgeConfig(GSON.toJson(judgeConfig));
+        }
         // 参数校验
         questionService.validQuestion(question, false);
         long id = questionUpdateRequest.getId();
@@ -143,6 +157,23 @@ public class QuestionController {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
         return ResultUtils.success(questionService.getQuestionVO(question, request));
+    }
+    /**
+     * 分页获取题目列表（仅管理员）
+     *
+     * @param questionQueryRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/list/page")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Page<Question>> listQuestionByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
+                                                   HttpServletRequest request) {
+        long current = questionQueryRequest.getCurrent();
+        long size = questionQueryRequest.getPageSize();
+        Page<Question> questionPage = questionService.page(new Page<>(current, size),
+                questionService.getQueryWrapper(questionQueryRequest));
+        return ResultUtils.success(questionPage);
     }
 
     /**
@@ -225,6 +256,14 @@ public class QuestionController {
         if (tags != null) {
             question.setTags(GSON.toJson(tags));
         }
+        List<JudgeCase> judgeCase = questionEditRequest.getJudgeCase();
+        if (judgeCase!=null){
+            question.setJudgeCase(GSON.toJson(judgeCase));
+        }
+        List<JudgeConfig> judgeConfig = questionEditRequest.getJudgeConfig();
+        if (judgeConfig!=null){
+            question.setJudgeConfig(GSON.toJson(judgeConfig));
+        }
         // 参数校验
         questionService.validQuestion(question, false);
         User loginUser = userService.getLoginUser(request);
@@ -239,5 +278,4 @@ public class QuestionController {
         boolean result = questionService.updateById(question);
         return ResultUtils.success(result);
     }
-
 }

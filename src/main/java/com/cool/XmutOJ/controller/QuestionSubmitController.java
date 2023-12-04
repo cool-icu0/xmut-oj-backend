@@ -1,11 +1,19 @@
 package com.cool.XmutOJ.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cool.XmutOJ.annotation.AuthCheck;
 import com.cool.XmutOJ.common.BaseResponse;
 import com.cool.XmutOJ.common.ErrorCode;
 import com.cool.XmutOJ.common.ResultUtils;
+import com.cool.XmutOJ.constant.UserConstant;
 import com.cool.XmutOJ.exception.BusinessException;
+import com.cool.XmutOJ.model.dto.question.QuestionQueryRequest;
 import com.cool.XmutOJ.model.dto.questionsubmit.QuestionSubmitAddRequest;
+import com.cool.XmutOJ.model.dto.questionsubmit.QuestionSubmitQueryRequest;
+import com.cool.XmutOJ.model.entity.Question;
+import com.cool.XmutOJ.model.entity.QuestionSubmit;
 import com.cool.XmutOJ.model.entity.User;
+import com.cool.XmutOJ.model.vo.QuestionSubmitVO;
 import com.cool.XmutOJ.service.QuestionSubmitService;
 import com.cool.XmutOJ.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -51,5 +59,23 @@ public class QuestionSubmitController {
         long questionSubmitId = questionSubmitService.doQuestionSubmit(questionSubmitAddRequest, loginUser);
         return ResultUtils.success(questionSubmitId);
     }
-
+    /**
+     * 分页获取题目提交列表（除了管理员外，普通用户只能看到非答案，提交代码等公开信息）
+     *
+     * @param questionSubmitQueryRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/list/page")
+    public BaseResponse<Page<QuestionSubmitVO>> listQuestionSubmitByPage(@RequestBody QuestionSubmitQueryRequest questionSubmitQueryRequest,
+                                                                         HttpServletRequest request) {
+        long current = questionSubmitQueryRequest.getCurrent();
+        long size = questionSubmitQueryRequest.getPageSize();
+        //从数据库中查询原始的题目提交分页信息
+        Page<QuestionSubmit> questionSubmitPage = questionSubmitService.page(new Page<>(current, size),
+                questionSubmitService.getQueryWrapper(questionSubmitQueryRequest));
+        final User loginUser = userService.getLoginUser(request);
+        //返回脱敏信息
+        return ResultUtils.success(questionSubmitService.getQuestionSubmitVOPage(questionSubmitPage,loginUser));
+    }
 }
