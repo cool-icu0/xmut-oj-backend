@@ -7,12 +7,10 @@ import com.cool.XmutOJ.common.ErrorCode;
 import com.cool.XmutOJ.constant.CommonConstant;
 import com.cool.XmutOJ.exception.BusinessException;
 import com.cool.XmutOJ.exception.ThrowUtils;
-import com.cool.XmutOJ.mapper.QuestionFavourMapper;
-import com.cool.XmutOJ.mapper.QuestionThumbMapper;
-import com.cool.XmutOJ.model.dto.question.QuestionEsDTO;
-import com.cool.XmutOJ.model.dto.question.QuestionQueryRequest;
-import com.cool.XmutOJ.model.entity.*;
 import com.cool.XmutOJ.mapper.QuestionMapper;
+import com.cool.XmutOJ.model.dto.question.QuestionQueryRequest;
+import com.cool.XmutOJ.model.entity.Question;
+import com.cool.XmutOJ.model.entity.User;
 import com.cool.XmutOJ.model.vo.QuestionVO;
 import com.cool.XmutOJ.model.vo.UserVO;
 import com.cool.XmutOJ.service.QuestionService;
@@ -22,32 +20,24 @@ import com.google.gson.Gson;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
-* @author Cool
-* @description 针对表【question(题目)】的数据库操作Service实现
-* @createDate 2023-11-30 14:56:38
-*/
+ * @author Cool
+ * @description 针对表【question(题目)】的数据库操作Service实现
+ * @createDate 2023-11-30 14:56:38
+ */
 @Service
 public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
-    implements QuestionService{
+        implements QuestionService {
     private final static Gson GSON = new Gson();
 
     @Resource
@@ -55,6 +45,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
 
     /**
      * 校验题目是否合法
+     *
      * @param question
      * @param add
      */
@@ -157,26 +148,6 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         Set<Long> userIdSet = questionList.stream().map(Question::getUserId).collect(Collectors.toSet());
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
                 .collect(Collectors.groupingBy(User::getId));
-        // 2. 已登录，获取用户点赞、收藏状态
-        Map<Long, Boolean> questionIdHasThumbMap = new HashMap<>();
-        Map<Long, Boolean> questionIdHasFavourMap = new HashMap<>();
-        User loginUser = userService.getLoginUserPermitNull(request);
-        if (loginUser != null) {
-            Set<Long> questionIdSet = questionList.stream().map(Question::getId).collect(Collectors.toSet());
-            loginUser = userService.getLoginUser(request);
-            // 获取点赞
-            QueryWrapper<QuestionThumb> questionThumbQueryWrapper = new QueryWrapper<>();
-            questionThumbQueryWrapper.in("questionId", questionIdSet);
-            questionThumbQueryWrapper.eq("userId", loginUser.getId());
-            List<QuestionThumb> questionQuestionThumbList = questionThumbMapper.selectList(questionThumbQueryWrapper);
-            questionQuestionThumbList.forEach(questionQuestionThumb -> questionIdHasThumbMap.put(questionQuestionThumb.getQuestionId(), true));
-            // 获取收藏
-            QueryWrapper<QuestionFavour> questionFavourQueryWrapper = new QueryWrapper<>();
-            questionFavourQueryWrapper.in("questionId", questionIdSet);
-            questionFavourQueryWrapper.eq("userId", loginUser.getId());
-            List<QuestionFavour> questionFavourList = questionFavourMapper.selectList(questionFavourQueryWrapper);
-            questionFavourList.forEach(questionFavour -> questionIdHasFavourMap.put(questionFavour.getQuestionId(), true));
-        }
         // 填充信息
         List<QuestionVO> questionVOList = questionList.stream().map(question -> {
             QuestionVO questionVO = QuestionVO.objToVo(question);
@@ -185,9 +156,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
             if (userIdUserListMap.containsKey(userId)) {
                 user = userIdUserListMap.get(userId).get(0);
             }
-            questionVO.setUser(userService.getUserVO(user));
-            questionVO.setHasThumb(questionIdHasThumbMap.getOrDefault(question.getId(), false));
-            questionVO.setHasFavour(questionIdHasFavourMap.getOrDefault(question.getId(), false));
+            questionVO.setUserVO(userService.getUserVO(user));
             return questionVO;
         }).collect(Collectors.toList());
         questionVOPage.setRecords(questionVOList);

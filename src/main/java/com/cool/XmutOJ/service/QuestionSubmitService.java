@@ -1,7 +1,9 @@
 package com.cool.XmutOJ.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.cool.XmutOJ.model.dto.questionsubmit.QuestionSubmitAddRequest;
 import com.cool.XmutOJ.model.entity.QuestionSubmit;
+import com.cool.XmutOJ.model.entity.User;
 
 /**
 * @author Cool
@@ -10,4 +12,12 @@ import com.cool.XmutOJ.model.entity.QuestionSubmit;
 */
 public interface QuestionSubmitService extends IService<QuestionSubmit> {
 
+    /**
+     * 题目提交
+     *
+     * @param questionSubmitAddRequest 题目提交信息
+     * @param loginUser
+     * @return
+     */
+    long doQuestionSubmit(QuestionSubmitAddRequest questionSubmitAddRequest, User loginUser);
 }
