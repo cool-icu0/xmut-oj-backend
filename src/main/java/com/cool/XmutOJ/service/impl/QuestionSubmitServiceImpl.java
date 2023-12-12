@@ -6,19 +6,16 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cool.XmutOJ.common.ErrorCode;
 import com.cool.XmutOJ.constant.CommonConstant;
 import com.cool.XmutOJ.exception.BusinessException;
+import com.cool.XmutOJ.judge.JudgeService;
 import com.cool.XmutOJ.mapper.QuestionSubmitMapper;
-import com.cool.XmutOJ.model.dto.question.QuestionQueryRequest;
-import com.cool.XmutOJ.model.dto.questionsubmit.JudgeInfo;
 import com.cool.XmutOJ.model.dto.questionsubmit.QuestionSubmitAddRequest;
 import com.cool.XmutOJ.model.dto.questionsubmit.QuestionSubmitQueryRequest;
 import com.cool.XmutOJ.model.entity.Question;
 import com.cool.XmutOJ.model.entity.QuestionSubmit;
 import com.cool.XmutOJ.model.entity.User;
-import com.cool.XmutOJ.model.enums.QuestSubmitStatusEnum;
+import com.cool.XmutOJ.model.enums.QuestionSubmitStatusEnum;
 import com.cool.XmutOJ.model.enums.QuestionSubmitLanguageEnum;
 import com.cool.XmutOJ.model.vo.QuestionSubmitVO;
-import com.cool.XmutOJ.model.vo.QuestionVO;
-import com.cool.XmutOJ.model.vo.UserVO;
 import com.cool.XmutOJ.service.QuestionService;
 import com.cool.XmutOJ.service.QuestionSubmitService;
 import com.cool.XmutOJ.service.UserService;
@@ -26,17 +23,13 @@ import com.cool.XmutOJ.utils.SqlUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.aop.framework.AopContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Cool
@@ -53,6 +46,10 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
     @Resource
     private UserService userService;
 
+    @Resource
+    @Lazy
+    private JudgeService judgeService;
+
     /**
      * 题目提交
      *
@@ -62,6 +59,8 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
      */
     @Override
     public long doQuestionSubmit(QuestionSubmitAddRequest questionSubmitAddRequest, User loginUser) {
+
+
         // 校验编程语言是否合法
         String language = questionSubmitAddRequest.getSubmitLanguage();
         QuestionSubmitLanguageEnum languageEnum = QuestionSubmitLanguageEnum.getEnumByValue(language);
@@ -82,14 +81,19 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         questionSubmit.setQuestionId(questionId);
         questionSubmit.setSubmitCode(questionSubmitAddRequest.getSubmitCode());
         questionSubmit.setSubmitLanguage(language);
-        questionSubmit.setSubmitState(QuestSubmitStatusEnum.WAITING.getValue());
+        questionSubmit.setSubmitState(QuestionSubmitStatusEnum.WAITING.getValue());
         // 设置初始状态
         questionSubmit.setJudgeInfo("{}");
         boolean save = this.save(questionSubmit);
         if (!save) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据插入失败");
         }
-        return questionSubmit.getId();
+        Long questionSubmitId = questionSubmit.getId();
+        CompletableFuture.runAsync(()->{
+            judgeService.doJudge(questionSubmitId);
+        });
+        return questionSubmitId;
+
     }
 
     /**
@@ -115,7 +119,7 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         queryWrapper.eq(StringUtils.isNotBlank(submitLanguage), "submitLanguage", submitLanguage);
         queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
         queryWrapper.eq(ObjectUtils.isNotEmpty(questionId), "questionId", questionId);
-        queryWrapper.eq(QuestSubmitStatusEnum.getEnumByValue(status) != null, "status", status);
+        queryWrapper.eq(QuestionSubmitStatusEnum.getEnumByValue(status) != null, "status", status);
         queryWrapper.eq("isDelete", false);
         queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
                 sortField);

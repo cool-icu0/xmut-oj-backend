@@ -13,8 +13,8 @@ public enum QuestionSubmitLanguageEnum {
 
     JAVA("java", "java"),
     CPLUSPLUS("cpp", "cpp"),
-    CSHAPE("csharp", "csharp"),
     GOLANG("go", "go"),
+    CSHAPE("csharp", "csharp"),
     PYTHON("python", "python"),
     JAVASCRIPT("javascript", "javascript");
 
