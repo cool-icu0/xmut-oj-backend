@@ -3,9 +3,7 @@ package com.cool.XmutOJ.model.vo;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.cool.XmutOJ.model.dto.question.JudgeConfig;
-import com.cool.XmutOJ.model.entity.Post;
 import com.cool.XmutOJ.model.entity.Question;
-import com.google.gson.reflect.TypeToken;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
@@ -89,6 +87,7 @@ public class QuestionVO implements Serializable {
 
     /**
      * 包装类转对象
+     *
      * @param questionVO
      * @return
      */
@@ -104,7 +103,7 @@ public class QuestionVO implements Serializable {
             question.setTags(jsonStr);
         }
         JudgeConfig voJudgeConfig = questionVO.getJudgeConfig();
-        if (voJudgeConfig!=null){
+        if (voJudgeConfig != null) {
             question.setJudgeConfig(JSONUtil.toJsonStr(voJudgeConfig));
         }
         return question;

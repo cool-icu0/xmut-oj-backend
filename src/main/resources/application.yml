@@ -41,6 +41,11 @@ spring:
     multipart:
       # 大小限制
       max-file-size: 10MB
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:
 server:
   address: 0.0.0.0
   port: 8101
@@ -88,6 +93,16 @@ cos:
     secretKey: xxx
     region: xxx
     bucket: xxx
+# 阿里云对象云存储配置
+aliyun:
+  oss: #存储
+    file:
+      endpoint: XXX   # 域
+      accessKeyId: XXX  # 秘钥KeyId
+      accessKeySecret: XXX # 秘钥KeySecret
+      bucketName: XXX  # 桶名
+      url: XXX  # 访问地址
+
 #代码沙箱配置
 codesandbox:
   type: remote

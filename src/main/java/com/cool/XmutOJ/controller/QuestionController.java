@@ -31,9 +31,6 @@ import java.util.List;
 
 /**
  * 题目接口
- *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @RestController
 @RequestMapping("/question")
@@ -116,13 +113,40 @@ public class QuestionController {
     }
 
     /**
+     * 批量删除
+     *
+     * @param deleteRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/batchDelete")
+    public BaseResponse<Boolean> batchDeleteQuestion(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+        if (deleteRequest == null || deleteRequest.getIds() == null || deleteRequest.getIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User user = userService.getLoginUser(request);
+        List<Long> ids = deleteRequest.getIds();
+
+        // 判断是否存在以及权限
+        for (Long id : ids) {
+            Question oldQuestion = questionService.getById(id);
+            ThrowUtils.throwIf(oldQuestion == null, ErrorCode.NOT_FOUND_ERROR);
+            if (!oldQuestion.getUserId().equals(user.getId()) && !userService.isAdmin(request)) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+            }
+        }
+        boolean success = questionService.removeByIds(ids);
+        return ResultUtils.success(success);
+    }
+
+    /**
      * 更新（仅管理员）
      *
      * @param questionUpdateRequest
      * @return
      */
     @PostMapping("/update")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
     public BaseResponse<Boolean> updateQuestion(@RequestBody QuestionUpdateRequest questionUpdateRequest) {
         if (questionUpdateRequest == null || questionUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -309,7 +333,7 @@ public class QuestionController {
         if (questionSubmitAddRequest == null || questionSubmitAddRequest.getQuestionId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        // 登录才能点赞
+        // 登录才能提交
         final User loginUser = userService.getLoginUser(request);
         long questionSubmitId = questionSubmitService.doQuestionSubmit(questionSubmitAddRequest, loginUser);
         return ResultUtils.success(questionSubmitId);

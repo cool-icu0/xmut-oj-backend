@@ -10,17 +10,17 @@ import com.cool.XmutOJ.manager.CosManager;
 import com.cool.XmutOJ.model.dto.file.UploadFileRequest;
 import com.cool.XmutOJ.model.entity.User;
 import com.cool.XmutOJ.model.enums.FileUploadBizEnum;
+import com.cool.XmutOJ.service.FileService;
 import com.cool.XmutOJ.service.UserService;
 import java.io.File;
 import java.util.Arrays;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @RestController
 @RequestMapping("/file")
+@CrossOrigin(originPatterns={"http://localhost:8080"},allowCredentials = "true")
 @Slf4j
 public class FileController {
 
@@ -38,16 +39,37 @@ public class FileController {
     @Resource
     private CosManager cosManager;
 
+    @Resource
+    private FileService ossService;
+
     /**
-     * 文件上传
+     * 上传头像
+     *
+     * @param file
+     * @return
+     */
+    @ApiOperation(value = "文件上传")
+    @PostMapping("/upload")
+    public BaseResponse<String> uploadOssFile(@RequestPart("file") MultipartFile file) {
+        //获取上传的文件
+        if (file.isEmpty()) {
+            throw new BusinessException(ErrorCode.NULL_ERROR, "上传文件为空");
+        }
+        //返回上传到oss的路径
+        String url = ossService.uploadFileAvatar(file);
+        //返回r对象
+        return ResultUtils.success(url);
+    }
+    /**
+     * 文件上传COS
      *
      * @param multipartFile
      * @param uploadFileRequest
      * @param request
      * @return
      */
-    @PostMapping("/upload")
-    public BaseResponse<String> uploadFile(@RequestPart("file") MultipartFile multipartFile,
+    @PostMapping("/upload/cos")
+    public BaseResponse<String> uploadCosFile(@RequestPart("file") MultipartFile multipartFile,
             UploadFileRequest uploadFileRequest, HttpServletRequest request) {
         String biz = uploadFileRequest.getBiz();
         FileUploadBizEnum fileUploadBizEnum = FileUploadBizEnum.getEnumByValue(biz);

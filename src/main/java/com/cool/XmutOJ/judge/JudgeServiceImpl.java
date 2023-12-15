@@ -14,8 +14,12 @@ import com.cool.XmutOJ.model.dto.question.JudgeCase;
 import com.cool.XmutOJ.model.entity.Question;
 import com.cool.XmutOJ.model.entity.QuestionSubmit;
 import com.cool.XmutOJ.model.enums.QuestionSubmitStatusEnum;
+import com.cool.XmutOJ.model.vo.QuestionVO;
 import com.cool.XmutOJ.service.QuestionService;
 import com.cool.XmutOJ.service.QuestionSubmitService;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -100,6 +104,34 @@ public class JudgeServiceImpl implements JudgeService {
         updateQuestionSubmit.setSubmitState(QuestionSubmitStatusEnum.SUCCEED.getValue());
         updateQuestionSubmit.setJudgeInfo(JSONUtil.toJsonStr(judgeInfo));
         updateState = questionSubmitService.updateById(updateQuestionSubmit);
+        //判完题目进行数据增加（通过率）
+        System.out.println("test01:"+updateQuestionSubmit);
+        //提交数+1
+        // todo 1 增加一个判断
+        if (question.getSubmitNum() == null ){
+            question.setSubmitNum(1);
+        } else {
+            question.setSubmitNum(question.getSubmitNum() +1);
+        }
+        // 如果通过了，则通过数+1
+        // 创建 Gson 对象
+        Gson gson = new Gson();
+        // 将 JSON 字符串解析为 JsonObject 对象
+        JsonObject jsonObject = gson.fromJson(updateQuestionSubmit.getJudgeInfo(), JsonObject.class);
+        // 获取 message 字段的值
+        String message = jsonObject.get("message").getAsString();
+        // 打印获取到的 message 值
+        System.out.println("message的值为：" + message);
+        if (message.equals("成功")){
+            if (question.getAcceptedNum()==null){
+                question.setAcceptedNum(1);
+            }else {
+                question.setAcceptedNum(question.getAcceptedNum() + 1);
+            }
+        }
+        //进行题目更新操作
+        questionService.updateById(question);
+        System.out.println("test12:"+question.toString());
         if (!updateState) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "题目状态更新失败");
         }
