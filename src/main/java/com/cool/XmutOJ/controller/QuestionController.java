@@ -1,12 +1,10 @@
 package com.cool.XmutOJ.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cool.XmutOJ.common.*;
+import com.cool.XmutOJ.mapper.QuestionMapper;
 import com.google.gson.Gson;
 import com.cool.XmutOJ.annotation.AuthCheck;
-import com.cool.XmutOJ.common.BaseResponse;
-import com.cool.XmutOJ.common.DeleteRequest;
-import com.cool.XmutOJ.common.ErrorCode;
-import com.cool.XmutOJ.common.ResultUtils;
 import com.cool.XmutOJ.constant.UserConstant;
 import com.cool.XmutOJ.exception.BusinessException;
 import com.cool.XmutOJ.exception.ThrowUtils;
@@ -23,11 +21,20 @@ import com.cool.XmutOJ.service.QuestionSubmitService;
 import com.cool.XmutOJ.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 题目接口
@@ -45,6 +52,8 @@ public class QuestionController {
 
     @Resource
     private QuestionSubmitService questionSubmitService;
+    @Resource
+    QuestionMapper questionMapper;
 
     private final static Gson GSON = new Gson();
 
@@ -138,6 +147,57 @@ public class QuestionController {
         boolean success = questionService.removeByIds(ids);
         return ResultUtils.success(success);
     }
+
+    /**
+     * 批量下载MD文件
+     *
+     * @param
+     * @return
+     */
+
+    @PostMapping("/batchDownload")
+    public ResponseEntity<byte[]> batchDownloadQuestions(@RequestBody DownloadRequest downloadRequest) {
+        List<Long> ids = downloadRequest.getIds();
+        if (downloadRequest == null || downloadRequest.getIds() == null || downloadRequest.getIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        List<Question> questions = questionMapper.selectBatchIds(ids);
+        if (questions.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        // 创建临时zip文件
+        byte[] zipFileContent = createTempZipFile(questions);
+
+        // 设置响应头，指定文件名
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=questions.zip");
+
+        // 返回文件内容
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(zipFileContent.length)
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .body(zipFileContent);
+    }
+
+    private byte[] createTempZipFile(List<Question> questions) {
+        // 创建临时zip文件并写入问题内容，具体实现需要根据业务逻辑进行
+        // 以下是一个简化的示例，实际需要根据具体需求进行实现
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            for (Question question : questions) {
+                ZipEntry entry = new ZipEntry("question_" + question.getId() + ".md");
+                zos.putNextEntry(entry);
+                zos.write(question.getContent().getBytes());
+                zos.closeEntry();
+            }
+        } catch (IOException e) {
+            // 处理异常
+        }
+        return baos.toByteArray();
+    }
+
 
     /**
      * 更新（仅管理员）

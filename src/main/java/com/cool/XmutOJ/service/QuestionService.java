@@ -8,6 +8,7 @@ import com.cool.XmutOJ.model.entity.Question;
 import com.cool.XmutOJ.model.vo.QuestionVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author Cool
@@ -48,4 +49,5 @@ public interface QuestionService extends IService<Question> {
      * @return
      */
     Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request);
+
 }
