@@ -156,11 +156,7 @@ public class QuestionController {
      */
 
     @PostMapping("/batchDownload")
-    public ResponseEntity<byte[]> batchDownloadQuestions(@RequestBody DownloadRequest downloadRequest) {
-        List<Long> ids = downloadRequest.getIds();
-        if (downloadRequest == null || downloadRequest.getIds() == null || downloadRequest.getIds().isEmpty()) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
+    public ResponseEntity<byte[]> batchDownloadQuestions(@RequestBody List<Long> ids) {
         List<Question> questions = questionMapper.selectBatchIds(ids);
         if (questions.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
@@ -256,6 +252,27 @@ public class QuestionController {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
         return ResultUtils.success(question);
+    }
+    /**
+     * 根据 id 获取
+     *
+     * @param id
+     * @return
+     */
+    @GetMapping("/get2Answer")
+    public BaseResponse<Question> getQuestionById2Answer(long id, HttpServletRequest request) {
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Question question = questionService.getById(id);
+        if (question == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        Question q1 = new Question();
+        BeanUtils.copyProperties(q1,question);
+        q1.setAnswer(question.getAnswer());
+        return ResultUtils.success(q1);
     }
 
     /**

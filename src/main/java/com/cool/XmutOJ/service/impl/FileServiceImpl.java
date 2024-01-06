@@ -3,19 +3,15 @@ package com.cool.XmutOJ.service.impl;
 import cn.hutool.core.date.DateTime;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
-import com.aliyun.oss.model.ObjectMetadata;
 import com.cool.XmutOJ.service.FileService;
 import com.cool.XmutOJ.utils.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.util.UUID;
 
 /**
- * @author Shier
  * 阿里云对象存储实现类
  */
 @Service
@@ -26,7 +22,6 @@ public class FileServiceImpl implements FileService {
      */
     @Override
     public String uploadFileAvatar(MultipartFile file) {
-
         //工具类获取值
         String endpoint = FileUtils.END_POINT;
         String accessKeyId = FileUtils.KEY_ID;
@@ -41,12 +36,10 @@ public class FileServiceImpl implements FileService {
             inputStream = file.getInputStream();
             //获取文件名称
             String fileName = file.getOriginalFilename();
-
             //1. 在文件名称里面添加随机唯一的值
             String uuid = UUID.randomUUID().toString().replaceAll("-","");
             //拼接文件名
             fileName = uuid + fileName;
-
             //2 把文件按照日期进行分类
             //获取当前日期
             String newDate = new DateTime().toString("yyyy/MM/dd");
